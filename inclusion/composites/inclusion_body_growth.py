@@ -94,7 +94,6 @@ class InclusionBodyGrowth(Composer):
             },
         }
 
-
     def initial_state(self, config=None):
         if config is None:
             config = {}
@@ -137,20 +136,18 @@ def test_inclusion_body(total_time=1000):
             'growth_rate': 0.001  # fast growth
         },
     }
-    composite = InclusionBodyGrowth(parameters)
-
-    initial_state = composite.initial_state()
+    composer = InclusionBodyGrowth(parameters)
+    composite = composer.generate(path=('agents', agent_id))
 
     # settings for simulation and plot
     settings = {
-        'initial_state': {'agents': {agent_id: initial_state}},
-        'outer_path': ('agents', agent_id),
+        'initial_state': composite.initial_state(),
         'return_raw_data': True,
         'timestep': 1,
         'total_time': total_time}
     return simulate_composite(composite, settings)
 
-def run_compartment(out_dir='out'):
+def run_composite(out_dir='out'):
     data = test_inclusion_body(total_time=4000)
     plot_settings = {}
     plot_agents_multigen(data, plot_settings, out_dir)
@@ -160,7 +157,8 @@ def plot_inclusion_topology(out_dir='out'):
     plot_topology(
         composite=InclusionBodyGrowth({'agent_id': '1'}).generate(),
         settings={},
-        out_dir=out_dir)
+        out_dir=out_dir,
+        filename='inclusion_topology.pdf')
 
 
 if __name__ == '__main__':
@@ -168,4 +166,4 @@ if __name__ == '__main__':
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     plot_inclusion_topology(out_dir=out_dir)
-    run_compartment(out_dir=out_dir)
+    run_composite(out_dir=out_dir)

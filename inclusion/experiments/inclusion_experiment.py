@@ -7,7 +7,7 @@ Inclusion body experiments
 from vivarium.core.control import Control
 from vivarium.core.composition import (
     compose_experiment,
-    GENERATORS_KEY,
+    COMPOSER_KEY,
     EXPERIMENT_OUT_DIR,
 )
 
@@ -16,11 +16,12 @@ from vivarium_multibody.composites.lattice import (
     Lattice,
     make_lattice_config,
 )
-from vivarium_cell.composites.inclusion_body_growth import InclusionBodyGrowth
+from inclusion.composites.inclusion_body_growth import InclusionBodyGrowth
 
 # plots
 from vivarium.plots.agents_multigen import plot_agents_multigen
-from vivarium_multibody.plots
+from vivarium_multibody.plots.snapshots import (
+    plot_snapshots, plot_tags, format_snapshot_data)
 
 
 
@@ -54,12 +55,12 @@ def run_experiment(config={}):
 
     # declare the hierarchy
     hierarchy = {
-        GENERATORS_KEY: {
+        COMPOSER_KEY: {
             'type': Lattice,
             'config': lattice_config},
         'agents': {
             agent_id: {
-                GENERATORS_KEY: {
+                COMPOSER_KEY: {
                     'type': InclusionBodyGrowth,
                     'config': inclusion_config}}}}
 
@@ -81,34 +82,36 @@ def inclusion_plots_suite(data=None, out_dir=EXPERIMENT_OUT_DIR):
     tagged_molecules = [
         ('inclusion_body',),
         ('front', 'aggregate',),
-        ('back', 'aggregate',),
-    ]
+        ('back', 'aggregate',)]
 
     # multigen plot
     plot_settings = {}
     plot_agents_multigen(data, plot_settings, out_dir)
 
     # extract data for snapshots
-    multibody_config = lattice_config['multibody']
-    agents = {time: time_data['agents'] for time, time_data in data.items()}
+    bounds = lattice_config['multibody']['bounds']
+    agents, fields = format_snapshot_data(data)
 
     # snapshots plot
-    plot_data = {
-        'agents': agents,
-        'config': multibody_config,
-    }
-    plot_config = {
-        'n_snapshots': n_snapshots,
-        'out_dir': out_dir}
-    plot_snapshots(plot_data, plot_config)
+    plot_snapshots(
+        bounds=bounds,
+        agents=agents,
+        fields=fields,
+        # phylogeny_names=phylogeny_colors,
+        n_snapshots=n_snapshots,
+        out_dir=out_dir,
+        filename='inclusion_snapshots'
+    )
 
     # tags plot
-    plot_config = {
-        'tagged_molecules': tagged_molecules,
-        'n_snapshots': n_snapshots,
-        'convert_to_concs': False,
-        'out_dir': out_dir}
-    plot_tags(plot_data, plot_config)
+    plot_tags(
+        data=data,
+        bounds=bounds,
+        tagged_molecules=tagged_molecules,
+        n_snapshots=n_snapshots,
+        convert_to_concs=False,
+        out_dir=out_dir,
+    )
 
 
 
