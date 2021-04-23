@@ -23,6 +23,7 @@ from vivarium_multibody.plots.snapshots import (
     plot_snapshots, plot_tags, format_snapshot_data)
 
 LATTICE_CONFIG = make_lattice_config(
+    time_step=30,
     jitter_force=1e-4,
     bounds=[30, 30],
     n_bins=[10, 10])
@@ -77,7 +78,7 @@ def run_experiment(
 
 
 def inclusion_plots_suite(data=None, out_dir=EXPERIMENT_OUT_DIR):
-    n_snapshots = 6
+    n_snapshots = 5
     tagged_molecules = [
         ('inclusion_body',),
         ('front', 'aggregate',),
@@ -117,7 +118,10 @@ def inclusion_plots_suite(data=None, out_dir=EXPERIMENT_OUT_DIR):
 experiments_library = {
     '1': {
         'name': 'inclusion_lattice',
-        'experiment': run_experiment},
+        'experiment': run_experiment,
+        'kwargs': {
+            'total_time': 12000,
+        }},
 }
 plots_library = {
     '1': inclusion_plots_suite
