@@ -4,10 +4,9 @@ Inclusion body experiments
 ==========================
 """
 
+from vivarium.core.experiment import Experiment
 from vivarium.core.control import Control
 from vivarium.core.composition import (
-    compose_experiment,
-    COMPOSER_KEY,
     EXPERIMENT_OUT_DIR,
 )
 
@@ -23,62 +22,62 @@ from vivarium.plots.agents_multigen import plot_agents_multigen
 from vivarium_multibody.plots.snapshots import (
     plot_snapshots, plot_tags, format_snapshot_data)
 
-
-
-lattice_config = make_lattice_config(
+LATTICE_CONFIG = make_lattice_config(
     jitter_force=1e-4,
     bounds=[30, 30],
     n_bins=[10, 10])
 
 
-
-def run_experiment(config={}):
+def run_experiment(
+        initial_biomass=1000,
+        total_time=3000,
+):
     agent_id = '1'
-    time_total = 12000
-
-    inclusion_config = {
+    parameters = {
         'agent_id': agent_id,
-        'damage_rate': 5e-5,
+        'inclusion_process': {
+            'damage_rate': 1e-4,  # rapid damage
+        },
+        'growth_rate': {
+            'growth_rate': 0.001  # fast growth
+        },
     }
 
-    # initial state
-    compartment = InclusionBodyGrowth(inclusion_config)
-    compartment_state = compartment.initial_state({
-        'front': {
-            'aggregate': 200},
-        'back': {
-            'aggregate': 10}
-        })
-    initial_state = {
-        'agents': {
-            agent_id: compartment_state}}
+    # make the agent
+    agent_composer = InclusionBodyGrowth(parameters)
+    agent_composite = agent_composer.generate()
 
-    # declare the hierarchy
-    hierarchy = {
-        COMPOSER_KEY: {
-            'type': Lattice,
-            'config': lattice_config},
-        'agents': {
-            agent_id: {
-                COMPOSER_KEY: {
-                    'type': InclusionBodyGrowth,
-                    'config': inclusion_config}}}}
+    # make the environment
+    composer = Lattice(LATTICE_CONFIG)
+    composite = composer.generate()
 
-    # configure experiment
-    experiment = compose_experiment(
-        hierarchy=hierarchy,
-        initial_state=initial_state)
+    # merge in the agent
+    composite.merge(
+        composite=agent_composite,
+        path=('agents', agent_id))
 
-    # run simulation
-    experiment.update(time_total)
-    data = experiment.emitter.get_data()
-    experiment.end()
+    # get initial state
+    initial_state = composite.initial_state()
+    initial_state['agents'][agent_id]['molecules'] = {'biomass': initial_biomass}
+
+    # make the experiment
+    inclusion_experiment = Experiment({
+        'processes': composite['processes'],
+        'topology': composite['topology'],
+        'initial_state': initial_state
+    })
+
+    # run the experiment
+    inclusion_experiment.update(total_time)
+
+    # get the data
+    data = inclusion_experiment.emitter.get_data()
 
     return data
 
 
 def inclusion_plots_suite(data=None, out_dir=EXPERIMENT_OUT_DIR):
-    n_snapshots = 8
+    n_snapshots = 6
     tagged_molecules = [
         ('inclusion_body',),
         ('front', 'aggregate',),
@@ -89,7 +88,7 @@ def inclusion_plots_suite(data=None, out_dir=EXPERIMENT_OUT_DIR):
     plot_agents_multigen(data, plot_settings, out_dir)
 
     # extract data for snapshots
-    bounds = lattice_config['multibody']['bounds']
+    bounds = LATTICE_CONFIG['multibody']['bounds']
     agents, fields = format_snapshot_data(data)
 
     # snapshots plot
@@ -97,7 +96,6 @@ def inclusion_plots_suite(data=None, out_dir=EXPERIMENT_OUT_DIR):
         bounds=bounds,
         agents=agents,
         fields=fields,
-        # phylogeny_names=phylogeny_colors,
         n_snapshots=n_snapshots,
         out_dir=out_dir,
         filename='inclusion_snapshots'
@@ -133,8 +131,9 @@ workflow_library = {
 }
 
 if __name__ == '__main__':
-    Control(
+    c = Control(
         experiments=experiments_library,
         plots=plots_library,
         workflows=workflow_library,
         )
+    c.run_workflow('1')

@@ -51,8 +51,8 @@ class InclusionBody(Process):
         'unit_mw': AVOGADRO * units.fg / units.mol,
     }
 
-    def __init__(self, initial_parameters=None):
-        super(InclusionBody, self).__init__(initial_parameters)
+    def __init__(self, parameters=None):
+        super().__init__(parameters)
         self.aggregation_rate = self.parameters['aggregation_rate']
         self.damage_rate = self.parameters['damage_rate']
 
@@ -143,7 +143,7 @@ class InclusionBody(Process):
         delta_front = (front_aggregation + polar_damage) * timestep
         delta_back = (back_aggregation + polar_damage) * timestep
 
-        return {
+        update = {
             'front': {
                 'aggregate': delta_front},
             'back': {
@@ -152,6 +152,7 @@ class InclusionBody(Process):
             'molecules': delta_molecules,
         }
 
+        return update
 
 # functions to configure and run the process
 def run_inclusion_body(out_dir='out'):

@@ -6,9 +6,8 @@ Inclusion body composite
 
 import os
 
-from vivarium.library.units import units
-from vivarium.library.dict_utils import deep_merge
 from vivarium.core.process import Composer
+from vivarium.core.experiment import Experiment
 from vivarium.core.composition import (
     simulate_composite,
     COMPOSITE_OUT_DIR,
@@ -33,12 +32,13 @@ class InclusionBodyGrowth(Composer):
 
     defaults = {
         'inclusion_process': {},
-        'growth_rate': {},
+        'growth_rate': {
+            'variables': ['biomass']},
         'divide_condition': {
-            'threshold': 3000 * units.fg},
+            'threshold': 3000},
         'mass': {},
         'boundary_path': ('boundary',),
-        'agents_path': ('agents',),
+        'agents_path': ('..', '..', 'agents',),
         'daughter_path': tuple(),
         'initial_state_config': {
             'inclusion_process': {
@@ -85,7 +85,7 @@ class InclusionBodyGrowth(Composer):
                 'global': boundary_path
             },
             'divide_condition': {
-                'variable': boundary_path + ('mass',),
+                'variable': ('molecules', 'biomass',),
                 'divide': boundary_path + ('divide',),
             },
             'division': {
@@ -94,38 +94,11 @@ class InclusionBodyGrowth(Composer):
             },
         }
 
-    def initial_state(self, config=None):
-        if config is None:
-            config = {}
-        initial_state_config = self.config['initial_state_config']
-        config = deep_merge(config, initial_state_config)
 
-        # get the processes
-        network = self.generate()
-        processes = network['processes']
-        topology = network['topology']
-
-        initial_state = {}
-        for name, process in processes.items():
-            if name in ['inclusion_process', 'growth_rate']:
-                process_state = process.initial_state(config.get(name, {}))
-
-                # replace port name with store name
-                process_topology = topology[name]
-                replace_port_id = {}
-                for port_id, state in process_state.items():
-                    store_id = process_topology[port_id][0]
-                    if port_id is not store_id:
-                        replace_port_id[port_id] = store_id
-                for port_id, store_id in replace_port_id.items():
-                    process_state[store_id] = process_state[port_id]
-                    del process_state[port_id]
-                initial_state = deep_merge(initial_state, process_state)
-
-        return initial_state
-
-
-def test_inclusion_body(total_time=1000):
+def test_inclusion_body(
+        total_time=1000,
+        initial_biomass=1000,
+):
     agent_id = '0'
     parameters = {
         'agent_id': agent_id,
@@ -139,13 +112,23 @@ def test_inclusion_body(total_time=1000):
     composer = InclusionBodyGrowth(parameters)
     composite = composer.generate(path=('agents', agent_id))
 
-    # settings for simulation and plot
-    settings = {
-        'initial_state': composite.initial_state(),
-        'return_raw_data': True,
-        'timestep': 1,
-        'total_time': total_time}
-    return simulate_composite(composite, settings)
+    initial_state = composite.initial_state()
+    initial_state['agents'][agent_id]['molecules'] = {'biomass': initial_biomass}
+
+    # make the experiment
+    inclusion_experiment = Experiment({
+        'processes': composite['processes'],
+        'topology': composite['topology'],
+        'initial_state': initial_state
+    })
+
+    # run the experiment
+    inclusion_experiment.update(total_time)
+
+    # get the data
+    data = inclusion_experiment.emitter.get_data()
+
+    return data
 
 def run_composite(out_dir='out'):
     data = test_inclusion_body(total_time=4000)
@@ -153,9 +136,12 @@ def run_composite(out_dir='out'):
     plot_agents_multigen(data, plot_settings, out_dir)
 
 def plot_inclusion_topology(out_dir='out'):
+    agent_id = '1'
     # make a topology network plot
     plot_topology(
-        composite=InclusionBodyGrowth({'agent_id': '1'}).generate(),
+        composite=InclusionBodyGrowth({
+            'agent_id': agent_id,
+        }).generate(path=('agents', agent_id)),
         settings={},
         out_dir=out_dir,
         filename='inclusion_topology.pdf')
