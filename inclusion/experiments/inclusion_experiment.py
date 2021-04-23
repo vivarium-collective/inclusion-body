@@ -29,9 +29,9 @@ LATTICE_CONFIG = make_lattice_config(
     n_bins=[10, 10])
 
 
-def run_experiment(
+def test_experiment(
         initial_biomass=1000,
-        total_time=3000,
+        total_time=2000,
 ):
     agent_id = '1'
     parameters = {
@@ -118,7 +118,7 @@ def inclusion_plots_suite(data=None, out_dir=EXPERIMENT_OUT_DIR):
 experiments_library = {
     '1': {
         'name': 'inclusion_lattice',
-        'experiment': run_experiment,
+        'experiment': test_experiment,
         'kwargs': {
             'total_time': 12000,
         }},

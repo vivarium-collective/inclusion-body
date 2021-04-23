@@ -10,7 +10,6 @@ setup(
     name='',  # TODO: Put your package name here.
     version='0.0.1',
     packages=[
-        # TODO: Replace 'inclusion' with the name of your folder.
         'inclusion',
         'inclusion.processes',
         'inclusion.composites',
@@ -29,7 +28,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'vivarium-core',
+        'vivarium-multibody'
         'pytest',
-        # TODO: Add other dependencies.
     ],
 )
