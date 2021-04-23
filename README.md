@@ -1,25 +1,14 @@
-Visit [the Vivarium Core
-documentation](https://vivarium-core.readthedocs.io/) to learn how to
+Visit [the Vivarium Core documentation](https://vivarium-core.readthedocs.io/) to learn how to
 use the core Vivarium engine to create computational biology models.
 Check out the
 [getting started](https://vivarium-core.readthedocs.io/en/latest/getting_started.html)
 guide of the documentation. 
 
-What follows is a template `README.md`.
-
 ------------------------------------------------------------------------
 
-# Project Name
+# Inclusion Body
 
-<!--
-TODO: Fill in your own project name
--->
-
-Introduction to your project.
-
-<!--
-TODO: Fill in your own introduction.
--->
+![vivarium](doc/_static/inclusion_body_tags.png)
 
 ## Installation
 
